@@ -68,7 +68,7 @@ local FallDamage = {
 };
 
 -- Remote Event
-ToggleClientSideFallDamageRemote.OnClientEvent:Connect(function(player, type, mode)
+ToggleClientSideFallDamageRemote.OnServerEvent:Connect(function(player, type, mode)
 	if (not activePlayers[player]) then
 		local message = MessagePacker("Cannot update modules outside of region.", 2, {"Ok"}, "Server");
 		Utility.MessagePlayer(player, message);
