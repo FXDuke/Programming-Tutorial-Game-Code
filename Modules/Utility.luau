@@ -1,41 +1,56 @@
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local RunService = game:GetService("RunService");
+local TweenService = game:GetService("TweenService");
 
 -- Assets
 local Remotes = ReplicatedStorage:WaitForChild("Remotes");
-local Modules = ReplicatedStorage:WaitForChild("Modules");
-local MessagePacker = require(Modules:WaitForChild("MessagePacker"));
 local MessageRemote = Remotes:WaitForChild("Message");
-
--- Variables
-local messageID = 0;
-local messageDurationDelay = 0.25; -- Time (in seconds) extra after message duration to wait for response.
-local messageCallbacks = {};
 
 -- Module
 local utility = {
 	-- Messages player
-	MessagePlayer = function(player: Player, message: UIPackedMessage, callback: (player: Player, response: string?) -> ()?)
-		messageID += 1;
-		MessageRemote:FireClient(player, message, messageID);
+	MessagePlayer = function(player: Player, message: UIPackedMessage)
+		MessageRemote:FireClient(player, message);
+	end,
+	-- Tweens keypoints in numbersequence (for transparency etc). Does not tween envelope.
+	TweenNumberSequence = function(numberSequence: NumberSequence, tweenInfo: TweenInfo, callback: (numberSequence: NumberSequence) -> nil, sequencesValues: {number})
+		-- Get origin and goals for keypoints
+		local keypointOrigins = numberSequence.Keypoints;
 		
-		local ID = messageID;
-		if (callback) then
-			messageCallbacks[ID] = {
-				owner = player,
-				callback = callback
-			};
-			
-			task.spawn(function()
-				-- If callback is not called with duration, clear data
-				if (message.duration > 0) then 
-					task.wait(message.duration + messageDurationDelay);
-					if (messageCallbacks[ID]) then 
-						messageCallbacks[ID] = nil;
-					end
-				end
-			end)
+		-- Error handling
+		assert(#sequencesValues == #keypointOrigins, "Attempted to tween NumberSequence with invalid number of points");
+		assert(callback, "No callback set for NumberSequence tween");
+		assert(tweenInfo.Time > 0, "TweenInfo time for NumberSequence tween must be above 0");
+		
+		-- Find deltas for keypoints
+		local deltas = {};
+		for index, value in sequencesValues do 
+			deltas[index] = value - keypointOrigins[index].Value;	
 		end
+		
+		-- Tween in keypoints
+		local elapsed = 0;
+		local currentSequence;
+		while (elapsed < tweenInfo.Time) do 
+			elapsed = math.min(elapsed + RunService.PreSimulation:Wait(), tweenInfo.Time);
+			
+			-- Find alpha
+			local alpha = TweenService:GetValue(elapsed / tweenInfo.Time, tweenInfo.EasingStyle, tweenInfo.EasingDirection);
+			
+			-- Update each keypoint
+			local keypoints = {};
+			for index, value in deltas do
+				local keypoint = NumberSequenceKeypoint.new(keypointOrigins[index].Time, keypointOrigins[index].Value + value * alpha, keypointOrigins[index].Envelope);
+				keypoints[index] = keypoint;
+			end
+			
+			-- Create new number sequence and call the callback
+			currentSequence = NumberSequence.new(keypoints);
+			callback(currentSequence);
+		end
+		
+		return currentSequence;
 	end,
 	-- Locks vector 3 y axis to 0
 	Vector3YAxis0 = function(vector: Vector3): Vector3
@@ -51,20 +66,5 @@ local utility = {
 			and math.abs(ap.Z - bp.Z) < (as.Z + bs.Z) * 0.5;
 	end,
 };
-
--- Events
-MessageRemote.OnServerEvent:Connect(function(player: Player, id: number, response: string)
-	local info = messageCallbacks[id];
-	
-	if (not info) then 
-		return utility.MessagePlayer(player, MessagePacker("Recieved response for invalid message.", 1, {}, "Server"));
-	end
-	
-	if (info.owner ~= player) then 
-		return utility.MessagePlayer(player, MessagePacker("You cannot respond to other peoples messages...", -1, {"Ok"}, "Server"));
-	end
-	
-	info.callback(player, response);
-end)
 
 return utility;
