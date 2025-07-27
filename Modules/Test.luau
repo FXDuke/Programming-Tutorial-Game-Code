@@ -2,20 +2,16 @@ local parts = {};
 
 local testModule = {
 	PartAdded = function(part: Part)
-		
 		parts[part] = true;
 		
 		task.spawn(function()
 			while (parts[part]) do 
-				part.AssemblyLinearVelocity -= part.AssemblyLinearVelocity * task.wait() * 50;
+				task.wait();
+				part.AssemblyLinearVelocity = part.AssemblyLinearVelocity:Abs() * 0.9;
 			end
 		end)
-		
-		print(part.Name .. " added to test region");
 	end,	
 	PartRemoved = function(part: Part)
-		print(part.Name .. " was removed from test region");
-		
 		parts[part] = nil;
 	end,
 	PlayerAdded = function(player: Player)
