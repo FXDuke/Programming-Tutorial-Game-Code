@@ -53,7 +53,7 @@ local utility = {
 };
 
 -- Events
-MessageRemote.OnClientEvent:Connect(function(player: Player, id: number, response: string)
+MessageRemote.OnServerEvent:Connect(function(player: Player, id: number, response: string)
 	local info = messageCallbacks[id];
 	
 	if (not info) then 
