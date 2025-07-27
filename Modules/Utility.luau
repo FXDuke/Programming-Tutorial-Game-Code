@@ -1,4 +1,16 @@
+-- Services
+local ReplicatedStorage = game:GetService("ReplicatedStorage");
+
+-- Assets
+local Remotes = ReplicatedStorage:WaitForChild("Remotes");
+local MessageRemote = Remotes:WaitForChild("Message");
+
+-- Module
 local utility = {
+	-- Messages player
+	MessagePlayer = function(player: Player, message: UIPackedMessage)
+		MessageRemote:FireClient(player, message);
+	end,
 	-- Locks vector 3 y axis to 0
 	Vector3YAxis0 = function(vector: Vector3): Vector3
 		return Vector3.new(vector.X, 0, vector.Z);
