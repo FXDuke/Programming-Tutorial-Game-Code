@@ -9,17 +9,14 @@ local Modules = ReplicatedStorage:WaitForChild("Modules");
 local RegionsFolder = Parent:WaitForChild("Regions");
 local SimulatedPartsFolder = Parent:WaitForChild("SimulatedParts");
 
--- Remotes
-local RemoteEvents = ReplicatedStorage:WaitForChild("Remotes");
-local TransparencyChange = RemoteEvents:WaitForChild("TransparencyModifier"); -- Modifies transparency of supplied object (typically a region)
-
 -- Remote Variables
 local TransparencyEntered = 1;
-local TransparencyExit = 0.80;
+local TransparencyExit = 0.70;
 
 -- Load in modules
 local LoadedModules = {};
 for _, module: script in pairs(Modules:GetChildren()) do 
+	if (module:IsA("Folder")) then continue end;
 	LoadedModules[module.Name] = require(module);
 end
 
@@ -40,6 +37,7 @@ local function CollidingRegions(part: Part): {Script}
 	-- Find all colliding regions
 	for name, region in Regions do 
 		if (not LoadedModules.Utility.Collision3d(part, region)) then continue end;
+		if (Modules.ClientSide:FindFirstChild(name)) then colliding[name] = LoadedModules.Template; continue end;
 		assert(LoadedModules[name], name .. " does not have a valid module name associated with it: " .. name);
 		colliding[name] = LoadedModules[name];
 	end
@@ -56,6 +54,9 @@ Players.PlayerAdded:Connect(function(player: Player)
 		};
 		
 		char.Destroying:Once(function()
+			for name, module in active[player].activeRegions do 
+				module.PlayerRemoving(player);
+			end
 			active[player] = nil;
 		end)
 	end
@@ -116,9 +117,6 @@ RunService.PreSimulation:Connect(function(deltaTime: number)
 			if (not collisions[name]) then 
 				module.PlayerRemoving(player);
 				info.activeRegions[name] = nil;
-				task.spawn(function()
-					TransparencyChange:InvokeClient(player, Regions[name], TransparencyExit);
-				end)
 				continue;
 			end
 		end
@@ -127,9 +125,6 @@ RunService.PreSimulation:Connect(function(deltaTime: number)
 		for name, module in collisions do 
 			if (not info.activeRegions[name]) then
 				module.PlayerAdded(player);
-				task.spawn(function()
-					TransparencyChange:InvokeClient(player, Regions[name], TransparencyEntered);
-				end)
 			end
 		end
 		
