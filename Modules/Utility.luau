@@ -13,6 +13,10 @@ local utility = {
 	MessagePlayer = function(player: Player, message: UIPackedMessage)
 		MessageRemote:FireClient(player, message);
 	end,
+	-- Reflects vector intersecting with normal 
+	ReflectVector = function(incident: Vector3, normal: Vector3): Vector3
+		return incident - 2 * incident:Dot(normal) * normal
+	end,
 	-- Tweens keypoints in numbersequence (for transparency etc). Does not tween envelope.
 	TweenNumberSequence = function(numberSequence: NumberSequence, tweenInfo: TweenInfo, callback: (numberSequence: NumberSequence) -> nil, sequencesValues: {number})
 		-- Get origin and goals for keypoints
