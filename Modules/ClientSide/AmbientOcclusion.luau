@@ -4,6 +4,7 @@ local CollectionService = game:GetService("CollectionService");
 local RunService = game:GetService("RunService");
 local Debris = game:GetService("Debris");
 local Players = game:GetService("Players");
+local TweenService = game:GetService("TweenService");
 
 -- Assets
 local Modules = ReplicatedStorage:WaitForChild("Modules");
@@ -36,6 +37,7 @@ end
 local OcclusionRaycastParams = RaycastParams.new();
 OcclusionRaycastParams.FilterType = Enum.RaycastFilterType.Include;
 OcclusionRaycastParams.FilterDescendantsInstances = RaycastInclude;
+OcclusionRaycastParams.RespectCanCollide = false;
 
 -- Generate Vectors
 local VECTOR_RESOLUTION = 2;
