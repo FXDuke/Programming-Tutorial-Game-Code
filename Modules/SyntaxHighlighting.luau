@@ -116,6 +116,10 @@ return function(content: string)
 				number = false;
 				currentWord ..= char;
 				numberString = "";
+			elseif ((string.sub(content, i+1, i+1) == "." or string.sub(content, i-1, i-1) == ".") and char == ".") then 
+				number = false;
+				currentWord ..= char;
+				numberString = "";
 			else 
 				number = true;
 				numberString ..= char;
